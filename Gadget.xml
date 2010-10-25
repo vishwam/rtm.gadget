@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<gadget>
+	<name>Remember the Milk</name>
+	<version>1.0.0.0</version>
+	<description>
+		An unofficial interface to Remember the Milk.
+	</description>
+	<copyright>© 2010 (MIT License)</copyright>
+	<author name="Vishwam Subramanyam">
+		<info url="http://github.com/vishwam/rtm.gadget" text="GitHub" />
+		<logo src="images/logo.png" />
+	</author>
+	<icons>
+		<icon height="83" width="83" src="images/icon.png" />
+	</icons>
+	<hosts>
+		<host name="sidebar">
+			<base type="HTML" apiVersion="1.0.0" src="main.html" />
+			<permissions>Full</permissions>
+			<platform minPlatformVersion="1.0" />
+		</host>
+	</hosts>
+</gadget>

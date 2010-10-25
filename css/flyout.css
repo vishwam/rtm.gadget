@@ -1,0 +1,15 @@
+body
+{
+	margin:0;
+	border:none;
+	width:360;
+	height:280;
+	overflow:auto;
+}
+
+#content
+{
+	position:absolute;
+	border: none;
+	font-family:"Segoe UI", sans-serif;
+}
