@@ -38,7 +38,10 @@ var rtm = {
 	 * Adds the "api_sig" parameter to authenticate a request, using the
 	 * application's shared secret. Requires the 'auth' object, containing
 	 * the api_key and shared_secret to be present.
-	 * see http://www.rememberthemilk.com/services/api/authentication.rtm
+	 * See http://www.rememberthemilk.com/services/api/authentication.rtm
+	 * This method also adds frequently used parameters, such as the 
+	 * api_key, format and the auth_token (if present), automatically.
+	 *
 	 * @param the data to be signed, in an associative array
 	 * e.g., {"method":"rtm.test.login", "api_key":"foo"}
 	 * @return the same array, with an "api_sig" parameter added.
@@ -76,12 +79,29 @@ var rtm = {
 			}
 			else rtm.handleErrorResponse (response);
 		});
-	},
+	}, // end getFrob
 	
+	/**
+	 * getAuthenticationURL
+	 * This method generates the URL where the user can grant access
+	 * to the application with the desired permisiions (rwd).
+	 * Requires auth.frob to be present.
+	 * @param none
+	 * @return string containing the URL.
+	 */
 	getAuthenticationURL: function () {
 		var params = rtm.signRequest ({"perms":"delete", "frob":auth.frob});
-	},
+		// @todo return the url assembled using the authURL and the GET params.
+	}, // end getAuthentication
 	
+	/** 
+	 * getToken
+	 * Gets the authentication token, plus the user credentials and adds it to 
+	 * the auth object.
+	 * Requires auth.frob to be present
+	 * @param none
+	 * @return none: if successful, the token and user info are added to auth.
+	 */
 	getToken: function () {
 		var params = rtm.signRequest ({"frob":auth.frob, "method":"rtm.auth.getToken"});
 		$.getJSON (rtm.serviceURL, params, function (data) {
@@ -120,23 +140,30 @@ var rtm = {
 			}
 			else rtm.handleErrorResponse (response);
 		});
-	},
+	}, // end createTimeline
 	
+	/**
+	 * getTasks
+	 * Gets all tasks matching a given filter.
+	 * Requires auth token to be present.
+	 * @param filter (optional: if not present, the default filter is used).
+	 * @return none: if request is successful, all tasks matching the filter
+	 * are added to the cache.tasks object.
+	 */
 	getTasks: function (filter) {
 		if (filter == undefined) filter = cache.defaultFilter;
 		var params = {"method":"rtm.tasks.getList", "filter":filter};
-		if (filter != cache.currentFilter) {
-			cache.lastSyncedAt = undefined;
-		} else {
-			params["last_sync"] = cache.lastSyncedAt;
-		}
-		
+		var isNewFilter = (filter != cache.currentFilter);
+		if (!isNewFilter) params["last_sync"] = cache.lastSyncedAt;
+				
 		$.getJSON (rtm.serviceURL, rtm.signRequest(params), function(data) {
 			var response = data.rsp;
 			if (rtm.isCorrectResponse(response)) {
-				cache.currentFilter = filter;
-				if (cache.lastSyncedAt == undefined) cache.tasks.clear();
-				cache.lastSyncedAt = null; // current time
+				if (isNewFilter) {
+					cache.currentFilter = filter;
+					cache.tasks.clear();
+				}
+				cache.lastSyncedAt = null; // @todo get current time
 				cache.tasks.add (response);
 			}
 			else rtm.handleErrorResponse (response);
