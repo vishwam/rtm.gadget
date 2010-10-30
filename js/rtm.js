@@ -1,4 +1,4 @@
-var rtm = function () {
+var rtm = {
 	serviceURL: "http://api.rememberthemilk.com/services/rest/",
 	authURL: "http://www.rememberthemilk.com/services/auth/",
 	cache: {
@@ -214,4 +214,4 @@ var rtm = function () {
 		alert (response.err.code + ": "+response.err.msg);
 	} // end handleErrorResponse
 
-}(); // end rtm; execute and return function.
+} // end rtm
