@@ -222,8 +222,8 @@ var rtm = {
 			date.setTime (0); // reset time to start of epoch
 			
 			var regexp = /(\d\d\d\d)(-)?(\d\d)(-)?(\d\d)(T)?(\d\d)(:)?(\d\d)(:)?(\d\d)(\.\d+)?(Z|([+-])(\d\d)(:)?(\d\d))/;
-			if (dString.toString().match(new RegExp(regexp))) {
-				var d = dString.match(new RegExp(regexp));
+			var d = (dString === undefined) ? "" : dString.toString().match(regexp);
+			if (d) {
 				var offset = 0;
 				date.setUTCDate(1);
 				date.setUTCFullYear(parseInt(d[1],10));
