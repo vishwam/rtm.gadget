@@ -27,17 +27,6 @@ var rtm = {
 						this._list.push (tasks[j]);
 					}
 				}
-					/*
-				$.each (lists, function(index, list) {
-					var tasks = list.taskseries;
-					var dest = this._list;
-					$.each (tasks, function (taskIndex, task) {
-						task.list = list.id;
-						dest.push (task);
-					});
-				});
-				*/
-				
 				//this._list.sort (this.comparator);	
 			}, // end of add()
 		}, // end of object tasks
