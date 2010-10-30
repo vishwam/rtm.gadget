@@ -3,14 +3,14 @@ var rtm = {
 	authURL: "http://www.rememberthemilk.com/services/auth/",
 	cache: {
 		defaultFilter: "status:incomplete",
-		currentFilter: defaultFilter,
+		currentFilter: this.defaultFilter,
 		tasks: {
 			_list: [],
 			get: function() {
-				return _list;
+				return this._list;
 			},
 			clear: function() {
-				list.length = 0;
+				this._list.length = 0;
 			},
 			comparator: function(p,q) {
 				return 0;
@@ -19,19 +19,46 @@ var rtm = {
 				if (response.tasks == undefined) return -1;
 				if (response.tasks.list == undefined) return 0;
 				
-				var lists = response.tasks.list;
-				$.each (lists, function(index, list) {
-					var tasks = list.taskseries;
-					$.each (tasks, function (taskIndex, task) {
-						task.list = list.id;
-						_list.push (task);
+				var lists = rtm.makeArray (response.tasks.list);
+				for (i in lists) {
+					var tasks = rtm.makeArray (lists[i].taskseries);
+					for (j in tasks) {
+						tasks[j].list = lists[i].id;
+						this._list.push (tasks[j]);
 					}
 				}
+					/*
+				$.each (lists, function(index, list) {
+					var tasks = list.taskseries;
+					var dest = this._list;
+					$.each (tasks, function (taskIndex, task) {
+						task.list = list.id;
+						dest.push (task);
+					});
+				});
+				*/
 				
-				_list.sort (comparator);	
+				//this._list.sort (this.comparator);	
 			}, // end of add()
 		}, // end of object tasks
 	}, // end of object cache
+	
+	
+	/**
+	 * makeArray
+	 * Intended to wrap around crazy functions like rtm.tasks.getList that
+	 * can return an array (holding multiple objects), object (if only one
+	 * object matches a query, or nothing at all (no objects match the query).
+	 * This function ensures the output in all cases is an array that can
+	 * safely be used in a for..each loop.
+	 * @param input: an array, a plain object, or undefined.
+	 * @return an array holding all the objects in the input.
+	 */
+	makeArray: function (input) {
+		if (input == undefined) return [];
+		if ($.isArray(input)) return input;
+		return [input];
+	}, // end of getArray
 	
 	/**
 	 * signRequest 
@@ -39,19 +66,23 @@ var rtm = {
 	 * application's shared secret. Requires the 'auth' object, containing
 	 * the api_key and shared_secret to be present.
 	 * See http://www.rememberthemilk.com/services/api/authentication.rtm
-	 * This method also adds frequently used parameters, such as the 
-	 * api_key, format and the auth_token (if present), automatically.
+	 * This method can also add frequently used parameters, such as the 
+	 * api_key, format and the auth_token (if present), if needed.
 	 *
 	 * @param the data to be signed, in an associative array
 	 * e.g., {"method":"rtm.test.login", "api_key":"foo"}
+	 * @param disableAutoAdd (optional). If true, frequently used parameters
+	 * (e.g., API key, format, token) are *not* added. 
 	 * @return the same array, with an "api_sig" parameter added.
 	 */
-	signRequest: function (params) {
-		delete params["api_sig"]; // remove the signature if already present.
-		// add other frequent paramters, just in case
-		params["api_key"] = auth.api_key;
-		params["format"] = "json";
-		if (auth.token != undefined) params["auth_token"] = auth.token;
+	signRequest: function (params, disableAutoAdd) {
+		if (!disableAutoAdd) {
+			delete params["api_sig"]; // remove the signature if already present.
+			// add other frequent paramters, just in case
+			params["api_key"] = auth.api_key;
+			params["format"] = "json";
+			if (auth.token != undefined) params["auth_token"] = auth.token;
+		}
 		
 		// sort the keys in alphabetical order
 		var keys = [];
@@ -69,7 +100,6 @@ var rtm = {
 		return params;
 	}, // end signRequest
 	
-	
 	getFrob: function () {
 		var params = rtm.signRequest ({"method": "rtm.auth.getFrob"});
 		$.getJSON (rtm.serviceURL, params, function (data) {
@@ -81,6 +111,7 @@ var rtm = {
 		});
 	}, // end getFrob
 	
+	
 	/**
 	 * getAuthenticationURL
 	 * This method generates the URL where the user can grant access
@@ -90,8 +121,13 @@ var rtm = {
 	 * @return string containing the URL.
 	 */
 	getAuthenticationURL: function () {
-		var params = rtm.signRequest ({"perms":"delete", "frob":auth.frob});
-		// @todo return the url assembled using the authURL and the GET params.
+		return rtm.authURL + "?" + $.param(
+			rtm.signRequest ({
+				"api_key":auth.api_key,
+				"frob":auth.frob, 
+				"perms":"delete",
+			}, true) // sign request without adding new parameters
+		); 
 	}, // end getAuthentication
 	
 	/** 
@@ -151,20 +187,20 @@ var rtm = {
 	 * are added to the cache.tasks object.
 	 */
 	getTasks: function (filter) {
-		if (filter == undefined) filter = cache.defaultFilter;
+		if (filter == undefined) filter = rtm.cache.defaultFilter;
 		var params = {"method":"rtm.tasks.getList", "filter":filter};
-		var isNewFilter = (filter != cache.currentFilter);
-		if (!isNewFilter) params["last_sync"] = cache.lastSyncedAt;
+		var isNewFilter = (filter != rtm.cache.currentFilter);
+		if (!isNewFilter) params["last_sync"] = rtm.cache.lastSyncedAt;
 				
 		$.getJSON (rtm.serviceURL, rtm.signRequest(params), function(data) {
 			var response = data.rsp;
 			if (rtm.isCorrectResponse(response)) {
 				if (isNewFilter) {
-					cache.currentFilter = filter;
-					cache.tasks.clear();
+					rtm.cache.currentFilter = filter;
+					rtm.cache.tasks.clear();
 				}
-				cache.lastSyncedAt = null; // @todo get current time
-				cache.tasks.add (response);
+				rtm.cache.lastSyncedAt = null; // @todo get current time
+				rtm.cache.tasks.add (response);
 			}
 			else rtm.handleErrorResponse (response);
 		});
