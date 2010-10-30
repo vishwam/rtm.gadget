@@ -201,6 +201,48 @@ var rtm = {
 	
 	handleErrorResponse: function (response) {
 		alert (response.err.code + ": "+response.err.msg);
-	} // end handleErrorResponse
+	}, // end handleErrorResponse
 
+	timeUtils: {
+		getISO8601: function (date) {
+			// from https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date#Example.3a_ISO_8601_formatted_dates
+			if (date === undefined) date = new Date();
+			function pad(n){return n<10 ? '0'+n : n}
+			return date.getUTCFullYear()+'-'
+				+ pad(date.getUTCMonth()+1)+'-'
+				+ pad(date.getUTCDate())+'T'
+				+ pad(date.getUTCHours())+':'
+				+ pad(date.getUTCMinutes())+':'
+				+ pad(date.getUTCSeconds())+'Z';
+		}, // end getISO8601
+		
+		parseISO8601: function(dString){
+			// from http://dansnetwork.com/2008/11/01/javascript-iso8601rfc3339-date-parser/
+			var date = new Date();
+			date.setTime (0); // reset time to start of epoch
+			
+			var regexp = /(\d\d\d\d)(-)?(\d\d)(-)?(\d\d)(T)?(\d\d)(:)?(\d\d)(:)?(\d\d)(\.\d+)?(Z|([+-])(\d\d)(:)?(\d\d))/;
+			if (dString.toString().match(new RegExp(regexp))) {
+				var d = dString.match(new RegExp(regexp));
+				var offset = 0;
+				date.setUTCDate(1);
+				date.setUTCFullYear(parseInt(d[1],10));
+				date.setUTCMonth(parseInt(d[3],10) - 1);
+				date.setUTCDate(parseInt(d[5],10));
+				date.setUTCHours(parseInt(d[7],10));
+				date.setUTCMinutes(parseInt(d[9],10));
+				date.setUTCSeconds(parseInt(d[11],10));
+				date.setUTCMilliseconds(d[12] ? (parseFloat(d[12]) * 1000) : 0);
+				if (d[13] != 'Z') {
+					offset = (d[15] * 60) + parseInt(d[17],10);
+					offset *= ((d[14] == '-') ? -1 : 1);
+					date.setTime(date.getTime() - offset * 60 * 1000);
+				}
+			} else {
+				date.setTime(Date.parse(dString));
+			}
+			return date;
+		} // end setISO8601
+
+	} // end timeUtils
 } // end rtm
